@@ -1,6 +1,7 @@
 import 'package:ansim_talk/introduce/intro_manage_screen.dart';
 import 'package:ansim_talk/login/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,7 +10,13 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+//이
+
 class _LoginScreenState extends State<LoginScreen> {
+
+  final String email = "test@gmail.com";
+  final String password = "test1234!";
+
 
   //이메일 유효성 검사 : 백엔드 완성되면 전달받아서 하면 될 듯함
 
@@ -25,7 +32,29 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _passwordIsShow = false;
   bool _rememberMe = false; // 로그인 상태 유지 체크박스
 
-  //나중에 로그인 시 로컬에 로그인 기록을 저장하도록 하는게 좋을 듯
+  // 로그인 시도 로직
+  void _login() {
+    String inputEmail = _emailCtrl.text.trim();
+    String inputPassword = _passwordCtrl.text.trim();
+
+    if (inputEmail == email && inputPassword == password) {
+      // 로그인 성공
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const IntroManageScreen(), //시연을 위해 로그인 하더라도 항상 introducr화면들이 뜨도록 할거임
+        ),
+      );
+    } else {
+      // 로그인 실패
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('이메일 또는 비밀번호가 올바르지 않습니다.'),
+        ),
+      );
+    }
+  }
+
 
   @override
   void dispose() {
@@ -163,26 +192,66 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 8),
 
-                      TextField(
+                      TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+
+                        // 입력하면서 실시간 검사
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return '이메일을 입력해주세요.';
+                          }
+
+                          final emailRegex = RegExp(
+                            r'^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$',
+                          );
+
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return '올바른 이메일 형식이 아닙니다.';
+                          }
+
+                          return null;
+                        },
+
                         decoration: InputDecoration(
                           hintText: "이메일을 입력해주세요",
                           hintStyle: TextStyle(color: Colors.grey.shade400),
+
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
+
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
                           ),
+
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade200,
+                            ),
                           ),
+
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
                               color: Color(0xFF2575FC),
+                            ),
+                          ),
+
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                            ),
+                          ),
+
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
                             ),
                           ),
                         ),
@@ -202,18 +271,50 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 8),
 
-                      TextField(
+                      TextFormField(
                         controller: _passwordCtrl,
+
                         obscureText: !_passwordIsShow,
+
+                        // 입력하면서 실시간 검사
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '비밀번호를 입력해주세요.';
+                          }
+
+                          if (value.length < 8) {
+                            return '비밀번호는 8자 이상이어야 합니다.';
+                          }
+
+                          if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+                            return '영문을 포함해주세요.';
+                          }
+
+                          if (!RegExp(r'[0-9]').hasMatch(value)) {
+                            return '숫자를 포함해주세요.';
+                          }
+
+                          if (!RegExp(r'[!@#$%^&*]').hasMatch(value)) {
+                            return '특수문자를 포함해주세요.';
+                          }
+
+                          return null;
+                        },
+
                         decoration: InputDecoration(
                           hintText: "비밀번호를 입력해주세요",
                           hintStyle: TextStyle(color: Colors.grey.shade400),
+
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
+
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
                           ),
+
                           suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
@@ -227,14 +328,32 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.grey,
                             ),
                           ),
+
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade200,
+                            ),
                           ),
+
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
                               color: Color(0xFF2575FC),
+                            ),
+                          ),
+
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                            ),
+                          ),
+
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
                             ),
                           ),
                         ),
@@ -341,12 +460,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 20),
 
-                      // 7. 소셜 로그인 버튼 (Google & Facebook)
+                      // 7. 그외 로그인 버튼
                       _buildSocialButton(
                         icon: const Icon(
-                          Icons.g_mobiledata,
-                          size: 28,
-                          color: Colors.red,
+                          SimpleIcons.google,
+                          size: 22,
+                          color: SimpleIconColors.google,
                         ),
                         label: "구글 계정으로 시작하기",
                         onTap: () {
@@ -364,11 +483,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 12),
                       _buildSocialButton(
                         icon: const Icon(
-                          Icons.facebook,
+                          Icons.smartphone,
                           size: 22,
                           color: Color(0xFF1877F2),
                         ),
-                        label: "페이스북으로 시작하기",
+                        label: "전화 인증으로 시작하기",
                         onTap: () {
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(
