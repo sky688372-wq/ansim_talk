@@ -1,4 +1,5 @@
 import 'package:ansim_talk/home_screen/chat_list_screen.dart';
+import 'package:ansim_talk/home_screen/main_manage_screen.dart';
 import 'package:ansim_talk/introduce/introduce1_screen.dart';
 import 'package:ansim_talk/introduce/introduce2_screen.dart';
 import 'package:ansim_talk/introduce/introduce3_screen.dart';
@@ -15,6 +16,7 @@ class IntroManageScreen extends StatefulWidget {
 class _IntroManageScreenState extends State<IntroManageScreen> {
 
   // 인디케이터 패키지(스무스 인디케이터)를 불러와서 인디케이터 + 페이지 뷰를 이용해서 소개 화면을 만들 생각임
+  //인트로 화면은 추후 로컬에 로그인 이력이 있으면 바로 넘어가고 메인 페이지로 가도록 설계할 생각임
 
   final PageController _pageCtrl = PageController(); //페이지 관리 컨트롤러
 
@@ -39,7 +41,7 @@ class _IntroManageScreenState extends State<IntroManageScreen> {
       );
     } else {
       // 마지막 페이지에서 버튼 눌렀을 때 동작
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainManageScreen()));
     }
   }
 
@@ -97,7 +99,7 @@ class _IntroManageScreenState extends State<IntroManageScreen> {
 
                   TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainManageScreen()));
                       },
                       child: Text(
                         "넘어갈래요",
