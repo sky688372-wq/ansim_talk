@@ -1,3 +1,4 @@
+import 'package:ansim_talk/introduce/intro_manage_screen.dart';
 import 'package:ansim_talk/login/register_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+
+  //이메일 유효성 검사 : 백엔드 완성되면 전달받아서 하면 될 듯함
+
+  //실제로는 구상만 하면 되므로 임시 비밀번호를 하나 만들어두고 그를 이용해서 로그인 구현을 하면 될 듯함
+  // 나중에 openAI API를 통해서 불러오는 부분만 하여 최대한 백엔드의 부담을 줄이고 AI 부분에 신경쓸 수 있도록 할거임
+
+
   // 입력 컨트롤러
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
@@ -86,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -290,7 +298,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 52,
                         child: ElevatedButton(
                           onPressed: () {
-                            // 로그인 처리 로직
+                            // 로그인 처리 로직 : 일단 테스틀용으로 임시임
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntroManageScreen()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2575FC),
