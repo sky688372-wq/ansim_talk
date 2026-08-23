@@ -1,3 +1,4 @@
+import 'package:ansim_talk/home_screen/detail_screens/faq_screen.dart';
 import 'package:ansim_talk/home_screen/detail_screens/my_info_screen.dart';
 import 'package:ansim_talk/home_screen/detail_screens/notification_screen.dart';
 import 'package:ansim_talk/home_screen/detail_screens/notification_settings_screen.dart';
@@ -196,7 +197,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
           _buildMenuTile(
             icon: Icons.help_outline,
             label: '자주 묻는 질문',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => FaqScreen()));
+            },
           ),
           _buildMenuTile(
             icon: Icons.description_outlined,

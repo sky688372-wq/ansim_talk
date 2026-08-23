@@ -467,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 22,
                           color: SimpleIconColors.google,
                         ),
-                        label: "구글 계정으로 시작하기",
+                        label: "구글 계정으로 로그인",
                         onTap: () {
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -487,7 +487,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 22,
                           color: Color(0xFF1877F2),
                         ),
-                        label: "전화 인증으로 시작하기",
+                        label: "전화번호 인증으로 로그인",
                         onTap: () {
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(

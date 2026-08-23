@@ -1,17 +1,7 @@
 import 'package:ansim_talk/home_screen/chat_list_screen.dart';
+import 'package:ansim_talk/home_screen/community_screen.dart';
 import 'package:ansim_talk/home_screen/my_page_screen.dart';
 import 'package:flutter/material.dart';
-
-class CommunityScreen extends StatelessWidget {
-  const CommunityScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('커뮤니티 화면'),
-    );
-  }
-}
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -61,66 +51,48 @@ class _MainManageScreenState extends State<MainManageScreen> {
       ),
 
       // 떠 있는 형태의 바텀 네비게이션 바
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        // 현재 선택된 번호
+        currentIndex: _currentIndex,
 
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(35 ),
-          child: BottomNavigationBar(
-            // 현재 선택된 번호
-            currentIndex: _currentIndex,
+        // 탭을 누르면 해당 번호로 변경
+        onTap: _onTabTapped,
 
-            // 탭을 누르면 해당 번호로 변경
-            onTap: _onTabTapped,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 0,
 
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
+        selectedItemColor: brandGreen,
+        unselectedItemColor: Colors.grey,
 
-            selectedItemColor: brandGreen,
-            unselectedItemColor: Colors.grey,
+        selectedFontSize: 13,
+        unselectedFontSize: 13,
 
-            selectedFontSize: 13,
-            unselectedFontSize: 13,
-
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline),
-                activeIcon: Icon(Icons.chat_bubble),
-                label: '채팅',
-              ),
-
-              BottomNavigationBarItem(
-                icon: Icon(Icons.groups_outlined),
-                activeIcon: Icon(Icons.groups),
-                label: '커뮤니티',
-              ),
-
-              BottomNavigationBarItem(
-                icon: Icon(Icons.history_outlined),
-                activeIcon: Icon(Icons.history),
-                label: '검사 기록',
-              ),
-
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: '마이페이지',
-              ),
-            ],
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble),
+            label: '채팅',
           ),
-        ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.groups_outlined),
+            activeIcon: Icon(Icons.groups),
+            label: '커뮤니티',
+          ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: '검사 기록',
+          ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: '마이페이지',
+          ),
+        ],
       ),
     );
   }

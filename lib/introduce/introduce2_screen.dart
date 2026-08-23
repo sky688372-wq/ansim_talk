@@ -26,7 +26,7 @@ class _Introduce2ScreenState extends State<Introduce2Screen> {
 
           //제목 부분
           Text(
-            "대화하듯 물어보면,\n안심톡이 확인해드려요",
+            "위험한 순간,\nAI가 먼저 알려드려요",
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 26,
@@ -39,7 +39,7 @@ class _Introduce2ScreenState extends State<Introduce2Screen> {
           const SizedBox(height: 16),
 
           Text(
-            '의심되는 문자를 채팅창에 붙여넣기만 하세요.\nAI가 꼼꼼히 살펴봐 드릴게요.',
+            '대화 속 의심스러운 신호를 AI가 분석해\n위험한 상황을 미리 예방할 수 있도록 도와드려요.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,

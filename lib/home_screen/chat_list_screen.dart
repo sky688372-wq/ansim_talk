@@ -24,13 +24,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // 가짜 페이크 리스트 : 출처는 Unsplash
   List<UserModel> usersData = [
     UserModel(
-      name: '이서연',
+      name: '이서연(딸)',
       imgPath: 'assets/user/user1.jpg',
       introduce:
       '바다를 보며 힐링하는 것을 좋아하는 프리랜서 디자이너입니다. 탁 트인 바다 풍경을 사랑해요.',
     ),
     UserModel(
-      name: '박지훈',
+      name: '박지훈(아들)',
       imgPath: 'assets/user/user2.jpg',
       introduce:
       '주말마다 고궁 투어를 즐기는 역사 매니아입니다. 궁궐의 단청과 전통 한복의 아름다움을 좋아해요.',
