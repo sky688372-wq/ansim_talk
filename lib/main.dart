@@ -1,4 +1,6 @@
+import 'package:ansim_talk/login/login_screen.dart';
 import 'package:ansim_talk/splash_screen.dart';
+import 'package:ansim_talk/test_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -24,7 +26,7 @@ class MyApp extends StatelessWidget {
           behavior: SnackBarBehavior.floating, // (선택) 둥근 띄움 형태
         ),
       ),
-      home: SplashScreen(),
+      home: LoginScreen()
     );
   }
 }

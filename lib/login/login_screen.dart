@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:ansim_talk/introduce/intro_manage_screen.dart';
 import 'package:ansim_talk/login/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_icons/simple_icons.dart';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,16 +16,9 @@ class LoginScreen extends StatefulWidget {
 //이
 
 class _LoginScreenState extends State<LoginScreen> {
-
-  final String email = "test@gmail.com";
-  final String password = "test1234!";
-
-
-  //이메일 유효성 검사 : 백엔드 완성되면 전달받아서 하면 될 듯함
-
-  //실제로는 구상만 하면 되므로 임시 비밀번호를 하나 만들어두고 그를 이용해서 로그인 구현을 하면 될 듯함
-  // 나중에 openAI API를 통해서 불러오는 부분만 하여 최대한 백엔드의 부담을 줄이고 AI 부분에 신경쓸 수 있도록 할거임
-
+  //실제 비번
+  //"login_id": "demo01",
+  //"password": "1234"
 
   // 입력 컨트롤러
   final TextEditingController _emailCtrl = TextEditingController();
@@ -30,31 +26,62 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 상태 관리 변수
   bool _passwordIsShow = false;
-  bool _rememberMe = false; // 로그인 상태 유지 체크박스
+  bool _rememberMe = false; // 로그인 상태 유지 체크박스 : 실제로는 시연을 위해서 작동 안시킬거임
 
-  // 로그인 시도 로직
-  void _login() {
-    String inputEmail = _emailCtrl.text.trim();
-    String inputPassword = _passwordCtrl.text.trim();
+  Future<void> _login() async {
+    final url = Uri.parse('http://192.168.40.175:8000/api/v1/auth/login');
 
-    if (inputEmail == email && inputPassword == password) {
-      // 로그인 성공
-      Navigator.pushReplacement(
+    try {
+      // HTTP POST 요청
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "login_id": _emailCtrl.text.trim(),
+          "password": _passwordCtrl.text.trim(),
+        }),
+      );
+
+      // 서버 응답 출력
+      print('로그인 응답: ${response.body}');
+
+      // JSON 파싱
+      final data = jsonDecode(response.body);
+
+      // HTTP 상태 코드 + 서버의 success 값을 모두 확인
+      if (response.statusCode == 200 && data['success'] == true) {
+        // 로그인 성공
+        print('로그인 성공: ${response.body}');
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const IntroManageScreen()),
+        );
+      } else {
+        // 로그인 실패
+        final message = data['error']?['message'] ?? '로그인에 실패했습니다.';
+
+        print('로그인 실패: $message');
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } catch (e) {
+      // 네트워크 오류 또는 JSON 파싱 오류
+      print('로그인 오류: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(
-          builder: (context) => const IntroManageScreen(), //시연을 위해 로그인 하더라도 항상 introducr화면들이 뜨도록 할거임
-        ),
-      );
-    } else {
-      // 로그인 실패
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('이메일 또는 비밀번호가 올바르지 않습니다.'),
-        ),
-      );
+      ).showSnackBar(SnackBar(content: Text('네트워크 오류가 발생했습니다: $e')));
     }
   }
-
 
   @override
   void dispose() {
@@ -195,26 +222,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
-
-                        // 입력하면서 실시간 검사
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '이메일을 입력해주세요.';
-                          }
-
-                          final emailRegex = RegExp(
-                            r'^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$',
-                          );
-
-                          if (!emailRegex.hasMatch(value.trim())) {
-                            return '올바른 이메일 형식이 아닙니다.';
-                          }
-
-                          return null;
-                        },
-
                         decoration: InputDecoration(
                           hintText: "이메일을 입력해주세요",
                           hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -229,9 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade200,
-                            ),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
                           ),
 
                           focusedBorder: OutlineInputBorder(
@@ -243,16 +248,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red),
                           ),
 
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red),
                           ),
                         ),
                       ),
@@ -275,34 +276,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _passwordCtrl,
 
                         obscureText: !_passwordIsShow,
-
-                        // 입력하면서 실시간 검사
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '비밀번호를 입력해주세요.';
-                          }
-
-                          if (value.length < 8) {
-                            return '비밀번호는 8자 이상이어야 합니다.';
-                          }
-
-                          if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
-                            return '영문을 포함해주세요.';
-                          }
-
-                          if (!RegExp(r'[0-9]').hasMatch(value)) {
-                            return '숫자를 포함해주세요.';
-                          }
-
-                          if (!RegExp(r'[!@#$%^&*]').hasMatch(value)) {
-                            return '특수문자를 포함해주세요.';
-                          }
-
-                          return null;
-                        },
-
                         decoration: InputDecoration(
                           hintText: "비밀번호를 입력해주세요",
                           hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -331,9 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade200,
-                            ),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
                           ),
 
                           focusedBorder: OutlineInputBorder(
@@ -345,16 +316,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red),
                           ),
 
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red),
                           ),
                         ),
                       ),
@@ -417,8 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 52,
                         child: ElevatedButton(
                           onPressed: () {
-                            // 로그인 처리 로직 : 일단 테스틀용으로 임시임
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntroManageScreen()));
+                            _login();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2575FC),
