@@ -12,8 +12,6 @@ class CommunityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    // TODO: imageAsset 경로에 실제 이미지를 준비해서 assets/community/ 폴더에 넣고
-// pubspec.yaml의 assets 목록에도 등록해주세요.
     final List<CommunityPost> communityPosts = [
       const CommunityPost(
         title: '60대 이상만 노렸다…112 신고 전화도 가로챈 보이스피싱',
@@ -62,87 +60,76 @@ class CommunityScreen extends StatelessWidget {
 
 
     return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '커뮤니티',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  '보이스피싱 예방 캠페인',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: Color(0xFFF7F9F5)),
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: <Widget>[
+            _buildHeader(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+              child: _buildFeaturedPost(communityPosts.first),
             ),
-          ),
-          Expanded(
-            // 고정 데이터라 네트워크 호출/로딩/에러 처리 자체가 필요 없음
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-              itemCount: communityPosts.length,
-              itemBuilder: (context, index) {
-                return _buildPostCard(communityPosts[index]);
-              },
+            _buildFeedHeader(communityPosts.length - 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                child: Column(
+                  children: communityPosts
+                      .skip(1)
+                      .map(_buildNewsListItem)
+                      .toList(),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // 게시물 카드 하나
-  Widget _buildPostCard(CommunityPost post) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEDEDED)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildImageArea(post),
-          Padding(
-            padding: const EdgeInsets.all(16),
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: brandGreen,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: brandGreen.withValues(alpha: 0.24),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.newspaper_rounded, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTag(post.category),
-                const SizedBox(height: 8),
+              children: <Widget>[
                 Text(
-                  post.title,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  post.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.4),
-                ),
-                if (post.videoUrl != null) ...[
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _openLink(post.videoUrl!),
-                      icon: const Icon(Icons.play_circle_outline, size: 20, color: brandGreenDark),
-                      label: const Text('자세히 보기', style: TextStyle(color: brandGreenDark, fontWeight: FontWeight.w500)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: brandGreen),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
+                  '안심 뉴스',
+                  style: TextStyle(
+                    fontSize: 23,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
-                ],
+                ),
+                SizedBox(height: 3),
+                Text(
+                  '보이스피싱 예방 캠페인',
+                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                ),
               ],
             ),
           ),
@@ -151,45 +138,206 @@ class CommunityScreen extends StatelessWidget {
     );
   }
 
-  // 카드 상단 이미지 - 로컬 assets 이미지 사용 (네트워크 불필요) todo 현재 이미지 로딩 안되는 현상 고치기
-  Widget _buildImageArea(CommunityPost post) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Image.asset(
-        post.imageAsset,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          print('이미지 로딩 실패');
-          print('URL: ${post.imageAsset}');
-          print('ERROR: $error');
-          print('STACK: $stackTrace');
-
-          return _buildImageFallback();
-        },
+  Widget _buildFeaturedPost(CommunityPost post) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      child: InkWell(
+        onTap: post.videoUrl == null ? null : () => _openLink(post.videoUrl!),
+        child: SizedBox(
+          height: 238,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              _buildPostImage(post),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[Colors.transparent, Color(0xD9000000)],
+                    stops: <double>[0.32, 1],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 14,
+                left: 14,
+                child: _buildTag(post.category, onDark: true),
+              ),
+              if (post.videoUrl != null)
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  ),
+                ),
+              Positioned(
+                left: 18,
+                right: 18,
+                bottom: 18,
+                child: Text(
+                  post.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    height: 1.28,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildFeedHeader(int articleCount) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 10),
+      child: Row(
+        children: <Widget>[
+          const Text(
+            '최신 소식',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const Spacer(),
+          Text(
+            '$articleCount건',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewsListItem(CommunityPost post) {
+    return InkWell(
+      onTap: post.videoUrl == null ? null : () => _openLink(post.videoUrl!),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFF0F2ED))),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 104,
+                height: 92,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    _buildPostImage(post),
+                    if (post.videoUrl != null)
+                      Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: SizedBox(
+                height: 92,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _buildTag(post.category),
+                    const SizedBox(height: 7),
+                    Expanded(
+                      child: Text(
+                        post.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          height: 1.32,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.25,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '예방 정보 영상',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostImage(CommunityPost post) {
+    return Image.network(
+      post.imageAsset,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        print('[CommunityScreen] 이미지 로딩 실패: ${post.imageAsset}');
+        print('[CommunityScreen] 이미지 오류: $error');
+        return _buildImageFallback();
+      },
     );
   }
 
   Widget _buildImageFallback() {
-    print("이미지 로딩 안됨");
     return Container(
       color: brandGreenLight,
       child: const Center(
-        child: Icon(Icons.campaign_outlined, color: brandGreen, size: 36),
+        child: Icon(Icons.campaign_outlined, color: brandGreen, size: 32),
       ),
     );
   }
 
-  Widget _buildTag(String text) {
+  Widget _buildTag(String text, {bool onDark = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: brandGreenLight,
+        color: onDark ? Colors.white.withValues(alpha: 0.9) : brandGreenLight,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 12, color: brandGreenDark, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          fontSize: 11,
+          color: brandGreenDark,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

@@ -22,6 +22,7 @@ class MainManageScreen extends StatefulWidget {
 }
 
 class _MainManageScreenState extends State<MainManageScreen> {
+
   // 현재 선택된 화면 번호
   int _currentIndex = 0;
 

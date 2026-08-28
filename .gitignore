@@ -46,3 +46,5 @@ app.*.map.json
 # API Secret
 lib/secrets/
 lib/secrets/secrets.dart
+lib/test_screen.dart
+

@@ -90,7 +90,7 @@ class _FaqScreenState extends State<FaqScreen> {
 
             Text(
               '작품의 기획 의도와 주요 기능,\n'
-                  '발표회에서 자주 나오는 질문을 정리해 두었습니다.',
+                  '자주 나오는 질문들에 대한 답을 정리해 두었습니다.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
