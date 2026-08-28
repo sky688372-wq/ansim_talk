@@ -66,6 +66,12 @@ class ChatRoomModel {
 }
 
 class ChatApiService {
+
+  // todo : 해야할 일들
+  //나중에 라이브러리 사용해서 이미지 네트워크로 가져온 profile이미지들 항시 유지시킬 예정임
+  //현재 친구와 채팅방을 왔다갔다하면 튕기는 현상이 존재함 추후 이를 해결할 예정임 -> 아마 메모리, API등 때문인 것으로 보임
+  //해당 문제 해결 후 다음으로 chatGPT를 이용한 보이스 피싱 응답을 채팅방에서 보여주도록 해야함
+
   static const String _baseUrl = 'http://210.114.17.158:8000';
 
   const ChatApiService();
