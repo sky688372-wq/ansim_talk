@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:ansim_talk/user_model/user_session.dart';
+import 'package:ansim_talk/home_screen/detail_screens/chat_room_screen.dart';
+import 'package:ansim_talk/home_screen/detail_screens/friend_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,7 +24,7 @@ class FriendModel {
       id: (json['id'] as num).toInt(),
       loginId: json['login_id'] as String? ?? '',
       name: json['name'] as String? ?? '이름 없음',
-      profileImage: json['profile_image'] as String?,
+      profileImage: json['profile_image']?.toString(),
     );
   }
 }
@@ -55,7 +57,7 @@ class ChatRoomModel {
       id: (json['id'] as num).toInt(),
       friendId: (friendJson['id'] as num?)?.toInt() ?? 0,
       friendName: friendJson['name'] as String? ?? '알 수 없는 사용자',
-      profileImage: friendJson['profile_image'] as String?,
+      profileImage: friendJson['profile_image']?.toString(),
       lastMessage: json['last_message'] as String? ?? '',
       lastMessageAt: DateTime.tryParse(json['last_message_at'] as String? ?? ''),
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
@@ -64,7 +66,7 @@ class ChatRoomModel {
 }
 
 class ChatApiService {
-  static const String _baseUrl = 'http://192.168.40.175:8000';
+  static const String _baseUrl = 'http://210.114.17.158:8000';
 
   const ChatApiService();
 
@@ -155,6 +157,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void initState() {
     super.initState();
     _loadFriends();
+    _loadChats();
   }
 
   @override
@@ -256,7 +259,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
             const SizedBox(height: 8),
             Expanded(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
+                duration: const Duration(milliseconds: 320),
+                reverseDuration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  final offsetAnimation = Tween<Offset>(
+                    begin: const Offset(0.04, 0),
+                    end: Offset.zero,
+                  ).animate(animation);
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(position: offsetAnimation, child: child),
+                  );
+                },
                 child: _selectedTab == _ChatListTab.friends
                     ? KeyedSubtree(
                   key: const ValueKey<String>('friends'),
@@ -326,18 +342,48 @@ class _ChatListScreenState extends State<ChatListScreen> {
           color: const Color(0xFFE7EEE0),
           borderRadius: BorderRadius.circular(17),
         ),
-        child: Row(
+        child: Stack(
           children: <Widget>[
-            _buildTabButton(
-              tab: _ChatListTab.friends,
-              label: '친구',
-              icon: Icons.people_alt_outlined,
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeInOutCubic,
+              alignment: _selectedTab == _ChatListTab.friends
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              child: FractionallySizedBox(
+                widthFactor: 0.5,
+                heightFactor: 1,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.09),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 4),
-            _buildTabButton(
-              tab: _ChatListTab.chats,
-              label: '채팅방',
-              icon: Icons.chat_bubble_outline_rounded,
+            Row(
+              children: <Widget>[
+                _buildTabButton(
+                  tab: _ChatListTab.friends,
+                  label: '친구',
+                  icon: Icons.people_alt_outlined,
+                ),
+                const SizedBox(width: 4),
+                _buildTabButton(
+                  tab: _ChatListTab.chats,
+                  label: '채팅방',
+                  icon: Icons.chat_bubble_outline_rounded,
+                ),
+              ],
             ),
           ],
         ),
@@ -360,38 +406,40 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(13),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(13),
-            onTap: () => _selectTab(tab),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              decoration: BoxDecoration(
-                color: selected ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(13),
-                boxShadow: selected
-                    ? <BoxShadow>[
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 7,
-                    offset: const Offset(0, 2),
+          child: SizedBox.expand(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(13),
+              splashFactory: NoSplash.splashFactory,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              onTap: () => _selectTab(tab),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(icon, size: 21, color: selected ? _brandGreenDark : Colors.grey[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                          color: selected ? _brandGreenDark : Colors.grey[700],
+                        ),
+                      ),
+                    ],
                   ),
-                ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(icon, size: 21, color: selected ? _brandGreenDark : Colors.grey[700]),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                      color: selected ? _brandGreenDark : Colors.grey[700],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -513,13 +561,31 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildFriendCard(FriendModel friend) {
+    ChatRoomModel? linkedChat;
+    for (final room in _chatRooms) {
+      if (room.friendId == friend.id) {
+        linkedChat = room;
+        break;
+      }
+    }
+
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
-          // friend.id를 사용해 친구 프로필 또는 채팅방 이동을 구현할 수 있습니다.
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FriendProfileScreen(
+                friendName: friend.name,
+                profileImage: friend.profileImage,
+                chatId: linkedChat?.id,
+                lastMessage: linkedChat?.lastMessage,
+              ),
+            ),
+          );
         },
         child: Container(
           constraints: const BoxConstraints(minHeight: 82),
@@ -569,8 +635,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
-          // 예: Navigator.push(... ChatRoomScreen(chatId: room.id));
-          // room.id는 GET /api/v1/chats/{chatId}/messages 호출에 사용합니다.
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatRoomScreen(
+                chatId: room.id,
+                friendName: room.friendName,
+                profileImage: room.profileImage,
+              ),
+            ),
+          );
         },
         child: Container(
           constraints: const BoxConstraints(minHeight: 92),
@@ -646,7 +720,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
     );
 
-    if (profileImage == null || profileImage.isEmpty) return fallback;
+    final image = profileImage?.trim();
+    if (image == null || image.isEmpty) return fallback;
 
     return Container(
       padding: const EdgeInsets.all(2),
@@ -656,7 +731,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
       child: ClipOval(
         child: Image.network(
-          _resolveProfileImageUrl(profileImage),
+          _resolveProfileImageUrl(image),
           width: 56,
           height: 56,
           fit: BoxFit.cover,
@@ -737,10 +812,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   String _resolveProfileImageUrl(String profileImage) {
-    if (Uri.tryParse(profileImage)?.hasScheme ?? false) return profileImage;
-    return profileImage.startsWith('/')
-        ? 'http://192.168.40.175:8000$profileImage'
-        : 'http://192.168.40.175:8000/$profileImage';
+    final image = profileImage.trim();
+    if (Uri.tryParse(image)?.hasScheme ?? false) return image;
+    return image.startsWith('/')
+        ? 'http://210.114.17.158:8000$image'
+        : 'http://210.114.17.158:8000/$image';
   }
 
   String _formatChatTime(DateTime? time) {

@@ -7,14 +7,16 @@ import 'package:ansim_talk/user_model/user_session.dart';
 class ChatRoomScreen extends StatefulWidget {
   const ChatRoomScreen({
     super.key,
-    this.chatId = 1,
-    this.friendName = '박민수',
+    required this.chatId,
+    this.friendName,
     this.profileImage,
   });
 
-  // 기본값을 1로 두어 기존 ChatRoomScreen() 호출도 그대로 동작합니다.
+  // 채팅 목록에서 실제 채팅방 ID와 상대방 정보를 전달받습니다.
+
   final int chatId;
-  final String friendName;
+  final String? friendName;
+
   final String? profileImage;
 
   @override
@@ -27,9 +29,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   static const Color _darkGreen = Color(0xFF27500A);
   static const Color _background = Color(0xFFF7F9F5);
 
-  // 현재 테스트 계정 demo01의 user.id가 1이므로 시연용으로 사용합니다.
-  // UserSession에 userId를 추가했다면 UserSession().userId로 바꾸세요.
-  static const int _currentUserId = 1;
+
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -44,7 +44,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   void initState() {
     super.initState();
-    _friendName = widget.friendName;
+    _friendName = widget.friendName?.trim().isNotEmpty == true
+        ? widget.friendName!.trim()
+        : '대화 상대';
+
     _profileImage = widget.profileImage;
     debugPrint('[ChatRoomScreen] initState 실행: chatId=${widget.chatId}, 초기 상대방=$_friendName');
     _loadMessages();
@@ -398,7 +401,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Widget _buildMessageBubble(MessageModel message) {
-    final isMine = message.senderId == _currentUserId;
+    final isMine = message.senderId == UserSession().userId;
+
     final bubble = Flexible(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 290),
