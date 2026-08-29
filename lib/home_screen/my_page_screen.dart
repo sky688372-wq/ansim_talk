@@ -7,6 +7,8 @@ import 'package:ansim_talk/login/login_screen.dart';
 import 'package:ansim_talk/user_model/user_session.dart';
 import 'package:flutter/material.dart';
 
+import '../user_model/protection_mode_store.dart';
+
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
 
@@ -15,8 +17,29 @@ class MyPageScreen extends StatefulWidget {
 }
 
 class _MyPageScreenState extends State<MyPageScreen> {
+  bool _isProtectionModeOn = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProtectionMode();
+  }
+
+  Future<void> _loadProtectionMode() async {
+    await ProtectionModeStore.instance.loadOnce();
+
+    if (!mounted) return;
+    setState(() {
+      _isProtectionModeOn = ProtectionModeStore.instance.enabled;
+    });
+  }
+
+  Future<void> _saveProtectionMode(bool value) async {
+    await ProtectionModeStore.instance.setEnabled(value);
+  }
 
   void _tryLogout() {
+
     showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -145,8 +168,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
     });
   }
 
-  //나중에 이 트리거를 이용해서 AI모드를 적용할지 안할지 등을 만들면 됨
-  bool _isProtectionModeOn = true; // 보이스피싱 방지 모드 상태
+
 
   // 주요 사용 색깔들 모음
   static const Color brandGreen = Color(0xFF639922);
@@ -473,8 +495,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 setState(() {
                   _isProtectionModeOn = value;
                 });
-                // TODO: 실제 방지 모드 상태를 서버/로컬 저장소에 반영하는 로직 추가
+                _saveProtectionMode(value);
               },
+
             ),
           ],
         ),

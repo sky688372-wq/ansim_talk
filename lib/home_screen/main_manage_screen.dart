@@ -1,18 +1,8 @@
 import 'package:ansim_talk/home_screen/chat_list_screen.dart';
 import 'package:ansim_talk/home_screen/community_screen.dart';
+import 'package:ansim_talk/home_screen/guardian_connect_screen.dart';
 import 'package:ansim_talk/home_screen/my_page_screen.dart';
 import 'package:flutter/material.dart';
-
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('검사 기록 화면'),
-    );
-  }
-}
 
 class MainManageScreen extends StatefulWidget {
   const MainManageScreen({super.key});
@@ -32,7 +22,7 @@ class _MainManageScreenState extends State<MainManageScreen> {
   final List<Widget> _screens = const [
     ChatListScreen(),   // 0
     CommunityScreen(),  // 1
-    HistoryScreen(),    // 2
+    GuardianConnectScreen(),    // 2
     MyPageScreen(),     // 3
   ];
 
@@ -79,13 +69,13 @@ class _MainManageScreenState extends State<MainManageScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.groups_outlined),
             activeIcon: Icon(Icons.groups),
-            label: '커뮤니티',
+            label: '안전 커뮤니티',
           ),
 
           BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: '검사 기록',
+            icon: Icon(Icons.family_restroom_rounded),
+            activeIcon: Icon(Icons.family_restroom_rounded),
+            label: '보호자 연결',
           ),
 
           BottomNavigationBarItem(

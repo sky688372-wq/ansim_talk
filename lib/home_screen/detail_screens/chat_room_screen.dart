@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:ansim_talk/user_model/protection_mode_store.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:ansim_talk/user_model/user_session.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   const ChatRoomScreen({
@@ -39,6 +41,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   String? _profileImage;
   bool _isLoading = true;
   bool _isSending = false;
+  bool _isAnalysisLoading = false;
+  bool _isProtectionModeOn = false;
+  int? _analysisId;
+  String? _analysisTitle;
+  String? _analysisMessage;
+  String? _analysisRiskLevel;
+  int? _analysisRiskScore;
+  List<String> _analysisReasons = <String>[];
   String? _errorMessage;
 
   @override
@@ -50,7 +60,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     _profileImage = widget.profileImage;
     debugPrint('[ChatRoomScreen] initState 실행: chatId=${widget.chatId}, 초기 상대방=$_friendName');
-    _loadMessages();
+    _initializeChat();
+
   }
 
   @override
@@ -60,7 +71,367 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
+  Future<void> _initializeChat() async {
+    final protectionStore = ProtectionModeStore.instance;
+    await protectionStore.loadOnce();
+
+    if (!mounted) return;
+    setState(() {
+      _isProtectionModeOn = protectionStore.enabled;
+    });
+
+    // 채팅 메시지는 즉시 조회하고, 분석은 별도 요청으로 실행
+    _loadMessages();
+    if (_isProtectionModeOn) {
+      _requestChatAnalysis();
+    }
+  }
+
+  Future<void> _requestChatAnalysis() async {
+    if (_isAnalysisLoading || !_isProtectionModeOn) return;
+
+    final token = UserSession().token.trim();
+    if (token.isEmpty) {
+      debugPrint('[ChatRoomScreen][ANALYSIS] 중단: token이 비어 있습니다.');
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isAnalysisLoading = true;
+        _analysisTitle = null;
+        _analysisMessage = null;
+      });
+    }
+
+    final url = Uri.parse('$_baseUrl/api/v1/analysis/chats/${widget.chatId}');
+    debugPrint('[ChatRoomScreen][ANALYSIS][POST] 요청 URL=$url');
+    debugPrint('[ChatRoomScreen][ANALYSIS][POST] HTTP POST 전송');
+
+    try {
+      final response = await http
+          .post(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'accept': 'application/json',
+        },
+      )
+          .timeout(const Duration(seconds: 15));
+
+      final responseText = utf8.decode(response.bodyBytes);
+      debugPrint('[ChatRoomScreen][ANALYSIS][POST] 응답 status=${response.statusCode}');
+      debugPrint('[ChatRoomScreen][ANALYSIS][POST] 응답 본문=$responseText');
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(responseText);
+      final analysisId = _readAnalysisId(decoded);
+      if (analysisId == null) {
+        throw const FormatException('분석 응답에서 analysis_id를 찾지 못했습니다.');
+      }
+
+      _analysisId = analysisId;
+      debugPrint('[ChatRoomScreen][ANALYSIS] analysisId=$analysisId');
+      _applyAnalysisResponse(decoded);
+    } catch (error, stackTrace) {
+      debugPrint('[ChatRoomScreen][ANALYSIS] 오류=$error');
+      debugPrint('[ChatRoomScreen][ANALYSIS] stackTrace=\\n$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _analysisRiskLevel = null;
+        _analysisRiskScore = null;
+        _analysisReasons = <String>[];
+        _analysisTitle = '분석을 완료하지 못했습니다.';
+        _analysisMessage = '잠시 후 다시 시도해 주세요.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalysisLoading = false;
+        });
+      }
+    }
+  }
+
+  void _applyAnalysisResponse(dynamic decoded) {
+    if (decoded is! Map) return;
+    final root = Map<String, dynamic>.from(decoded);
+    final rawData = root['data'];
+    if (rawData is! Map) return;
+
+    final data = Map<String, dynamic>.from(rawData);
+    final rawScore = data['risk_score'];
+    final rawReasons = data['reasons'];
+    final reasons = rawReasons is List
+        ? rawReasons.map((item) => item.toString()).toList()
+        : <String>[];
+
+    if (!mounted) return;
+    setState(() {
+      _analysisRiskLevel = data['risk_level']?.toString();
+      _analysisRiskScore = rawScore is num
+          ? rawScore.toInt()
+          : int.tryParse(rawScore?.toString() ?? '');
+      _analysisReasons = reasons;
+      _analysisTitle = _analysisRiskLevel == 'DANGER'
+          ? '보이스피싱 위험 대화'
+          : _analysisRiskLevel == 'SAFE'
+          ? '안전한 대화'
+          : (_analysisRiskLevel ?? '분석 완료');
+      _analysisMessage = data['summary']?.toString() ?? '분석 결과를 확인했습니다.';
+    });
+  }
+
+  int? _readAnalysisId(dynamic decoded) {
+    if (decoded is! Map) return null;
+    final root = Map<String, dynamic>.from(decoded);
+    final rawData = root['data'];
+    final data = rawData is Map ? Map<String, dynamic>.from(rawData) : root;
+    final rawId = data['analysis_id'] ?? data['id'];
+    if (rawId is num) return rawId.toInt();
+    return int.tryParse(rawId?.toString() ?? '');
+  }
+
+  Future<void> _loadAnalysisResult(int analysisId, String token) async {
+    final url = Uri.parse('$_baseUrl/api/v1/analysis/$analysisId');
+    debugPrint('[ChatRoomScreen][ANALYSIS][GET] 요청 URL=$url');
+
+    final response = await http
+        .get(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'accept': 'application/json',
+      },
+    )
+        .timeout(const Duration(seconds: 15));
+
+    final responseText = utf8.decode(response.bodyBytes);
+    debugPrint('[ChatRoomScreen][ANALYSIS][GET] 응답 status=${response.statusCode}');
+    debugPrint('[ChatRoomScreen][ANALYSIS][GET] 응답 본문=$responseText');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+
+    final decoded = jsonDecode(responseText);
+    final values = _flattenAnalysisValues(decoded);
+    final title = _firstValue(values, const <String>[
+      'risk_level', 'risk', 'result', 'category', 'status',
+    ]);
+    final message = _firstValue(values, const <String>[
+      'message', 'summary', 'description', 'recommendation', 'detail',
+    ]);
+
+    if (!mounted) return;
+    setState(() {
+      _analysisTitle = title ?? '분석 결과를 확인했습니다.';
+      _analysisMessage = message ?? '분석 결과가 도착했습니다.';
+    });
+  }
+
+  Map<String, dynamic> _flattenAnalysisValues(dynamic decoded) {
+    if (decoded is! Map) return <String, dynamic>{};
+    final root = Map<String, dynamic>.from(decoded);
+    final data = root['data'];
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return root;
+  }
+
+  String? _firstValue(Map<String, dynamic> values, List<String> keys) {
+    for (final key in keys) {
+      final value = values[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+    return null;
+  }
+
+  String _buildRiskQrData() {
+    return jsonEncode(<String, dynamic>{
+      'type': 'ansim_talk_risk_analysis',
+      'chat_id': widget.chatId,
+      'analysis_id': _analysisId,
+      'risk_level': _analysisRiskLevel,
+      'risk_score': _analysisRiskScore,
+      'summary': _analysisMessage,
+      'reasons': _analysisReasons,
+    });
+  }
+
+  void _showRiskQrDialog() {
+    if (_analysisRiskLevel == null || _analysisId == null) return;
+
+    final isDanger = _analysisRiskLevel == 'DANGER';
+    final accentColor = isDanger ? const Color(0xFFB42318) : _darkGreen;
+    final title = isDanger ? '보이스피싱 위험 정보' : '안전 대화 정보';
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+          scrollable: true,
+          title: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: accentColor, fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SizedBox(
+                width: 250,
+                height: 250,
+                child: QrImageView(
+                  data: _buildRiskQrData(),
+                  version: QrVersions.auto,
+                  size: 250,
+                  backgroundColor: Colors.white,
+                  eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: accentColor),
+                  dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black87),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isDanger
+                    ? '이 QR코드는 해당 채팅방의 보이스피싱 위험 정보를 담고 있습니다.\n보호자에게 보여 주세요.'
+                    : '이 QR코드는 해당 채팅방의 분석 정보를 담고 있습니다.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, height: 1.45),
+              ),
+              if (_analysisRiskScore != null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text('위험도 ${_analysisRiskScore}점', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: accentColor)),
+              ],
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('닫기', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRiskQrButton() {
+    if (_analysisRiskLevel == null || _analysisId == null) {
+      return const SizedBox(width: 72, height: 72);
+    }
+
+    return Semantics(
+      button: true,
+      label: '위험도 정보 QR코드 크게 보기',
+      child: GestureDetector(
+        onTap: _showRiskQrDialog,
+        child: Container(
+          width: 72,
+          height: 72,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFD4E2CC)),
+          ),
+          child: QrImageView(
+            data: _buildRiskQrData(),
+            version: QrVersions.auto,
+            size: 62,
+            backgroundColor: Colors.white,
+            gapless: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalysisCard() {
+    if (!_isProtectionModeOn) return const SizedBox.shrink();
+
+    final isDanger = _analysisRiskLevel == 'DANGER';
+    final cardColor = isDanger ? const Color(0xFFFFE9E7) : const Color(0xFFEAF3DE);
+    final borderColor = isDanger ? const Color(0xFFF3B4AE) : const Color(0xFFCFE2B5);
+    final accentColor = isDanger ? const Color(0xFFB42318) : _darkGreen;
+    final title = _isAnalysisLoading
+        ? '보이스피싱 예방 분석 중'
+        : (_analysisTitle ?? '보이스피싱 예방 모드 켜짐');
+    final message = _isAnalysisLoading
+        ? '대화 내용을 안전하게 확인하고 있습니다.'
+        : (_analysisMessage ?? '채팅방의 대화가 분석됩니다.');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _isAnalysisLoading
+              ? const SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.5, color: _green),
+          )
+              : Icon(
+            isDanger ? Icons.warning_amber_rounded : Icons.shield_outlined,
+            color: accentColor,
+            size: 24,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: accentColor),
+                ),
+                const SizedBox(height: 4),
+                if (_analysisRiskScore != null && !_isAnalysisLoading)
+                  Text(
+                    '위험도 ${_analysisRiskScore}점',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: accentColor),
+                  ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 14, height: 1.35, color: isDanger ? const Color(0xFF7A271A) : const Color(0xFF3B6D11)),
+                ),
+                if (_analysisReasons.isNotEmpty && !_isAnalysisLoading) ...<Widget>[
+                  const SizedBox(height: 6),
+                  Text(
+                    '감지 이유: ${_analysisReasons.join(', ')}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, height: 1.3, color: accentColor),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          _buildRiskQrButton(),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loadMessages({bool showLoading = true}) async {
+
     final token = UserSession().token.trim();
     debugPrint('[ChatRoomScreen][GET] 조회 시작: chatId=${widget.chatId}');
     debugPrint('[ChatRoomScreen][GET] token 존재 여부=${token.isNotEmpty}, 길이=${token.length}');
@@ -259,10 +630,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       appBar: _buildAppBar(),
       body: Column(
         children: <Widget>[
+          _buildAnalysisCard(),
           Expanded(child: _buildMessageArea()),
           _buildInputArea(),
         ],
       ),
+
     );
   }
 
