@@ -162,8 +162,49 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFriends();
-    _loadChats();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    if (UserSession().token.trim().isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _friendsError = '로그인 정보가 없습니다. 다시 로그인해 주세요.';
+        _chatsError = '로그인 정보가 없습니다. 다시 로그인해 주세요.';
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isFriendsLoading = true;
+      _isChatsLoading = true;
+      _friendsError = null;
+      _chatsError = null;
+    });
+
+    try {
+      final results = await Future.wait<dynamic>(<Future<dynamic>>[
+        _apiService.getFriends(),
+        _apiService.getChats(),
+      ]);
+
+      if (!mounted) return;
+      setState(() {
+        _friends = results[0] as List<FriendModel>;
+        _chatRooms = results[1] as List<ChatRoomModel>;
+        _isFriendsLoading = false;
+        _isChatsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _friendsError = error.toString();
+        _chatsError = error.toString();
+        _isFriendsLoading = false;
+        _isChatsLoading = false;
+      });
+    }
   }
 
   @override
@@ -174,7 +215,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _loadFriends() async {
     if (_isFriendsLoading) return;
-    if (UserSession().token.isEmpty) {
+    if (UserSession().token.trim().isEmpty) {
+      if (!mounted) return;
       setState(() => _friendsError = '로그인 정보가 없습니다. 다시 로그인해 주세요.');
       return;
     }
@@ -198,7 +240,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _loadChats() async {
     if (_isChatsLoading) return;
-    if (UserSession().token.isEmpty) {
+    if (UserSession().token.trim().isEmpty) {
+      if (!mounted) return;
       setState(() => _chatsError = '로그인 정보가 없습니다. 다시 로그인해 주세요.');
       return;
     }
@@ -221,21 +264,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   void _selectTab(_ChatListTab tab) {
-    if (_selectedTab == tab) {
-      _refreshCurrentTab();
-      return;
-    }
-
+    if (_selectedTab == tab || !mounted) return;
     setState(() => _selectedTab = tab);
-    if (tab == _ChatListTab.friends) {
-      _loadFriends();
-    } else {
-      _loadChats();
-    }
-  }
-
-  Future<void> _refreshCurrentTab() {
-    return _selectedTab == _ChatListTab.friends ? _loadFriends() : _loadChats();
   }
 
   void _clearSearch() {
@@ -264,32 +294,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             _buildSearchField(keyword),
             const SizedBox(height: 8),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                reverseDuration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  final offsetAnimation = Tween<Offset>(
-                    begin: const Offset(0.04, 0),
-                    end: Offset.zero,
-                  ).animate(animation);
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(position: offsetAnimation, child: child),
-                  );
-                },
-                child: _selectedTab == _ChatListTab.friends
-                    ? KeyedSubtree(
-                  key: const ValueKey<String>('friends'),
-                  child: _buildFriendsView(friends, keyword),
-                )
-                    : KeyedSubtree(
-                  key: const ValueKey<String>('chats'),
-                  child: _buildChatsView(rooms, keyword),
-                ),
-              ),
+              // 이전 목록과 새 목록을 동시에 렌더링하지 않아 구형 기기 부담을 줄입니다.
+              child: _selectedTab == _ChatListTab.friends
+                  ? _buildFriendsView(friends, keyword)
+                  : _buildChatsView(rooms, keyword),
             ),
+
           ],
         ),
       ),
@@ -741,8 +751,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           width: 56,
           height: 56,
           fit: BoxFit.cover,
+          cacheWidth: 112,
+          cacheHeight: 112,
           errorBuilder: (_, __, ___) => fallback,
         ),
+
       ),
     );
   }
@@ -763,7 +776,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget _buildEmptyState({required IconData icon, required String message}) {
     return RefreshIndicator(
       color: _brandGreen,
-      onRefresh: _refreshCurrentTab,
+      onRefresh: _selectedTab == _ChatListTab.friends ? _loadFriends : _loadChats,
+
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
