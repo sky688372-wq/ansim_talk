@@ -1,17 +1,7 @@
 # ansim_talk
 
-A new Flutter project.
+>인천전자마이스터 고등학교 MDP 프로젝트 : 보이스피싱 예방 프로젝트 "안심톡"
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 기획 : https://velog.io/@han090213/MDP-프로젝트-노약자들을-위한-안심톡-기획
+- 화면 소개 : https://velog.io/@han090213/MDP-프로젝트안심톡-개발기-실제로-구현한-기능과-화면-소개
+- 개발 과정과 느낀점 : 추후 작성 예정
