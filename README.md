@@ -8,5 +8,6 @@
 - 화면 소개 : https://velog.io/@han090213/MDP-프로젝트안심톡-개발기-실제로-구현한-기능과-화면-소개
 - 개발 과정과 느낀점 : 추후 작성 예정
 
+## 노션
 - https://app.notion.com/p/3c2868e9b5de80579a81d97f99960171?source=copy_link : 기획 과정
 - https://app.notion.com/p/MDP-1-3cd868e9b5de8001a85bfb290d95a235?source=copy_link : 구현 화면 및 간단 기능 소개
