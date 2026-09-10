@@ -12,6 +12,7 @@
 - https://app.notion.com/p/3c2868e9b5de80579a81d97f99960171?source=copy_link : 기획 과정
 - https://app.notion.com/p/MDP-1-3cd868e9b5de8001a85bfb290d95a235?source=copy_link : 구현 화면 및 간단 기능 소개
 
+---
 
 ## 인트로 일러스트 출처
 - 일러스트 1 : https://storyset.com/illustration/chatting/amico
