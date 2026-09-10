@@ -18,7 +18,7 @@
 <img width="400" height="400" alt="Chatting-amico" src="https://github.com/user-attachments/assets/f35fdae4-d5d5-4068-a7dd-66e4ddc10dd1" />
 
 - 일러스트 2 : https://storyset.com/illustration/chat-bot/pana
-  <img width="400" height="400" alt="intro2" src="https://github.com/user-attachments/assets/130041d4-70b5-442e-bf2d-108ba31434a3" />
+<img width="400" height="400" alt="intro2" src="https://github.com/user-attachments/assets/130041d4-70b5-442e-bf2d-108ba31434a3" />
 
 - 일러스트 3 : https://storyset.com/illustration/qr-code/rafiki
 <img width="400" height="400" alt="intro3" src="https://github.com/user-attachments/assets/b43f6ec8-0975-423a-ab8a-0b33445e154d" />
